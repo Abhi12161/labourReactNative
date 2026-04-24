@@ -17,6 +17,7 @@ import { LabourDashboard } from './LabourDashboard';
  * - onLogout: Function to log out the current user
  */
 const DashboardScreen = ({
+  appLocation,
   session,
   postedJobs,
   jobApplications,
@@ -36,6 +37,7 @@ const DashboardScreen = ({
       {isCustomer ? (
         // Render CustomerDashboard for customers
         <CustomerDashboard
+          appLocation={appLocation}
           session={session}
           jobApplications={jobApplications}
           postedJobs={postedJobs}
@@ -49,6 +51,7 @@ const DashboardScreen = ({
       ) : (
         // Render LabourDashboard for labour workers
         <LabourDashboard
+          appLocation={appLocation}
           session={session}
           jobApplications={jobApplications}
           postedJobs={postedJobs}

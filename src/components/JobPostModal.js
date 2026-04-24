@@ -12,14 +12,14 @@ import {
 import { colors, radius } from '../theme/tokens';
 import { PrimaryButton } from './PrimaryButton';
 
-const initialForm = {
+const createInitialForm = (defaultCity, options) => ({
   title: '',
-  skill: 'Raj Mistri',
+  skill: options?.skills?.[0] || 'Raj Mistri',
   description: '',
-  city: 'Muzaffarpur',
-  timing: 'Today',
-  level: 'Skilled',
-};
+  city: defaultCity || options?.cities?.[0] || '',
+  timing: options?.timings?.[0] || 'Today',
+  level: options?.levels?.[0] || 'Skilled',
+});
 
 function OptionGroup({ label, options, value, onChange }) {
   return (
@@ -43,14 +43,14 @@ function OptionGroup({ label, options, value, onChange }) {
   );
 }
 
-export function JobPostModal({ copy, onClose, onSubmit, options, visible }) {
-  const [form, setForm] = useState(initialForm);
+export function JobPostModal({ copy, defaultCity, onClose, onSubmit, options, visible }) {
+  const [form, setForm] = useState(createInitialForm(defaultCity, options));
 
   useEffect(() => {
     if (visible) {
-      setForm(initialForm);
+      setForm(createInitialForm(defaultCity, options));
     }
-  }, [visible]);
+  }, [defaultCity, options, visible]);
 
   const updateField = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -58,7 +58,7 @@ export function JobPostModal({ copy, onClose, onSubmit, options, visible }) {
 
   const submit = () => {
     onSubmit(form);
-    setForm(initialForm);
+    setForm(createInitialForm(defaultCity, options));
   };
 
   return (

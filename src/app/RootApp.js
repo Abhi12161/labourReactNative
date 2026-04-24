@@ -1,18 +1,29 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { SafeAreaView, StatusBar, StyleSheet } from 'react-native';
 
-import { initialPostedJobs } from '../data/dashboardData';
 import { AuthScreen } from '../screens/AuthScreen';
 import DashboardScreen from '../screens/DashboardScreen';
 import { RoleSelectionScreen } from '../screens/RoleSelectionScreen';
 import { colors } from '../theme/tokens';
+import { DEFAULT_APP_LOCATION, normalizeAppLocation } from '../utils/appLocation';
+import { getDashboardLocationData } from '../utils/dashboardLocationData';
 
 export default function RootApp() {
   const [language, setLanguage] = useState('en');
   const [session, setSession] = useState(null);
   const [selectedRole, setSelectedRole] = useState(null);
-  const [postedJobs, setPostedJobs] = useState(initialPostedJobs);
+  const [appLocation, setAppLocation] = useState(DEFAULT_APP_LOCATION);
+  const [postedJobs, setPostedJobs] = useState(
+    getDashboardLocationData(DEFAULT_APP_LOCATION).initialPostedJobs,
+  );
   const [jobApplications, setJobApplications] = useState([]);
+
+  useEffect(() => {
+    // Refresh the seeded demo jobs when the detected location changes before the user starts posting.
+    if (!session) {
+      setPostedJobs(getDashboardLocationData(appLocation).initialPostedJobs);
+    }
+  }, [appLocation, session]);
 
   // Keep the posted job shape close to what an API would return later.
   const addPostedJob = (job) => {
@@ -83,6 +94,10 @@ export default function RootApp() {
     setSelectedRole(role);
   };
 
+  const handleLocationDetected = useCallback((location) => {
+    setAppLocation(normalizeAppLocation(location));
+  }, []);
+
   const handleAuthenticated = (sessionData) => {
     setSession(sessionData);
   };
@@ -97,6 +112,7 @@ export default function RootApp() {
       <StatusBar barStyle="light-content" />
       {session ? (
         <DashboardScreen
+          appLocation={appLocation}
           jobApplications={jobApplications}
           postedJobs={postedJobs}
           language={language}
@@ -109,6 +125,7 @@ export default function RootApp() {
         />
       ) : selectedRole ? (
         <AuthScreen
+          appLocation={appLocation}
           language={language}
           onChangeLanguage={setLanguage}
           onAuthenticated={handleAuthenticated}
@@ -117,8 +134,10 @@ export default function RootApp() {
         />
       ) : (
         <RoleSelectionScreen
+          appLocation={appLocation}
           language={language}
           onChangeLanguage={setLanguage}
+          onLocationDetected={handleLocationDetected}
           onSelectRole={handleRoleSelect}
         />
       )}

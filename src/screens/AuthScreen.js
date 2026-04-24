@@ -8,9 +8,17 @@ import { API_BASE_URL } from '../config/env';
 import { copy } from '../constants/copy';
 import { useAuthFlow } from '../hooks/useAuthFlow';
 import { colors, radius } from '../theme/tokens';
+import { getLocationAwareCopy } from '../utils/appLocation';
 
-export function AuthScreen({ language, onAuthenticated, onChangeLanguage, preSelectedRole, onBack }) {
-  const text = copy[language];
+export function AuthScreen({
+  appLocation,
+  language,
+  onAuthenticated,
+  onChangeLanguage,
+  preSelectedRole,
+  onBack,
+}) {
+  const text = getLocationAwareCopy(copy[language], appLocation);
   const {
     authMode,
     loading,

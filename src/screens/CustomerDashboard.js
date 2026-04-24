@@ -6,19 +6,12 @@ import { InfoPanel } from '../components/InfoPanel';
 import { JobCard } from '../components/JobCard';
 import { JobPostModal } from '../components/JobPostModal';
 import { LabourCard } from '../components/LabourCard';
-import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { StatCard } from '../components/StatCard';
 import { copy } from '../constants/copy';
-import {
-    availableLabours,
-    customerMessages,
-    customerOverviewStats,
-    jobPostOptions,
-    labourFilterOptions,
-    popularSkills,
-} from '../data/dashboardData';
 import { colors, radius } from '../theme/tokens';
+import { buildAreaLocation, getLocationAwareCopy } from '../utils/appLocation';
+import { getDashboardLocationData } from '../utils/dashboardLocationData';
 import { filterJobs } from '../utils/filterJobs';
 
 // Initial filter state for customer dashboard
@@ -43,6 +36,7 @@ const initialFilters = {
  * - Notifications and messaging
  */
 export function CustomerDashboard({
+  appLocation,
   language,
   onChangeLanguage,
   onLogout,
@@ -53,7 +47,16 @@ export function CustomerDashboard({
   session,
 }) {
   // Get localized text based on selected language
-  const text = copy[language];
+  const text = getLocationAwareCopy(copy[language], appLocation);
+  const locationData = useMemo(() => getDashboardLocationData(appLocation), [appLocation]);
+  const {
+    availableLabours,
+    customerMessages,
+    customerOverviewStats,
+    jobPostOptions,
+    labourFilterOptions,
+    popularSkills,
+  } = locationData;
 
   // State for labour filtering
   const [filters, setFilters] = useState(initialFilters);
@@ -70,7 +73,7 @@ export function CustomerDashboard({
       ...filters,
       search: deferredSearch,
     });
-  }, [deferredSearch, filters]);
+  }, [availableLabours, deferredSearch, filters]);
 
   // Only show applications for jobs posted by the current customer.
   const customerApplications = useMemo(() => {
@@ -152,7 +155,7 @@ export function CustomerDashboard({
     const createdJob = {
       id: `post-${Date.now()}`,
       title: form.title || text.jobTitlePlaceholder,
-      location: `${form.city}, Muzaffarpur`,
+      location: buildAreaLocation(form.city, appLocation),
       posted: text.today,
       applicants: 0,
       distance: 'Nearby',
@@ -208,7 +211,7 @@ export function CustomerDashboard({
         ))}
       </View>
 
-      {/* Information panel about Muzaffarpur focus */}
+      {/* Information panel about the currently detected service area */}
       <InfoPanel title={text.focusMuzaffarpur} body={text.focusMuzaffarpurBody} tone="accent" />
 
       {/* Job posting section */}
@@ -294,6 +297,7 @@ export function CustomerDashboard({
       {/* Job posting modal */}
       <JobPostModal
         copy={text}
+        defaultCity={appLocation.city}
         options={jobPostOptions}
         visible={jobModalVisible}
         onClose={() => setJobModalVisible(false)}

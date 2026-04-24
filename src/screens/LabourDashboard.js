@@ -6,14 +6,9 @@ import { JobCard } from '../components/JobCard';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { StatCard } from '../components/StatCard';
 import { copy } from '../constants/copy';
-import {
-  labourMessages,
-  labourOverviewStats,
-  labourProfile,
-  labourReviews,
-  labourWorkHistory,
-} from '../data/dashboardData';
 import { colors, radius } from '../theme/tokens';
+import { getLocationAwareCopy } from '../utils/appLocation';
+import { getDashboardLocationData } from '../utils/dashboardLocationData';
 
 /**
  * LabourDashboard Component
@@ -30,6 +25,7 @@ import { colors, radius } from '../theme/tokens';
  * - Notifications and messaging
  */
 export function LabourDashboard({
+  appLocation,
   language,
   onChangeLanguage,
   onLogout,
@@ -38,7 +34,15 @@ export function LabourDashboard({
   session,
 }) {
   // Get localized text based on selected language
-  const text = copy[language];
+  const text = getLocationAwareCopy(copy[language], appLocation);
+  const locationData = getDashboardLocationData(appLocation);
+  const {
+    labourMessages,
+    labourOverviewStats,
+    labourProfile,
+    labourReviews,
+    labourWorkHistory,
+  } = locationData;
 
   // State for profile editing
   const [isEditingProfile, setIsEditingProfile] = useState(false);
