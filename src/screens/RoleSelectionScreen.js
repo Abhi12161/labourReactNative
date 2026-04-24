@@ -1,10 +1,14 @@
+import * as Location from 'expo-location'; // Import Expo Location API
+import { useEffect, useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
-
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { copy } from '../constants/copy';
 import { colors, radius } from '../theme/tokens';
 
 export function RoleSelectionScreen({ language, onChangeLanguage, onSelectRole }) {
+  const [location, setLocation] = useState(null);  // State to store location
+  const [locationError, setLocationError] = useState(null);  // State to store errors
+  const [address, setAddress] = useState(null);  // State to store the address (human-readable)
   const text = copy[language];
 
   const roles = [
@@ -24,6 +28,38 @@ export function RoleSelectionScreen({ language, onChangeLanguage, onSelectRole }
     },
   ];
 
+  useEffect(() => {
+    const getLocation = async () => {
+    
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setLocationError('Permission to access location was denied');
+        return;
+      }
+
+  
+      let { coords } = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+
+      // Set the coordinates in state
+      setLocation(coords);
+
+      // Reverse geocode the coordinates to get a human-readable address
+      const geocode = await Location.reverseGeocodeAsync({
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+      });
+
+      if (geocode.length > 0) {
+        const addressString = `${geocode[0].city}, ${geocode[0].region}, ${geocode[0].country}`;
+        setAddress(addressString);  // Set the address
+      }
+    };
+
+    getLocation();
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -33,6 +69,24 @@ export function RoleSelectionScreen({ language, onChangeLanguage, onSelectRole }
           <Text style={styles.appName}>{text.badge || 'Labor Connect'}</Text>
           <LanguageSwitcher selected={language} onChange={onChangeLanguage} />
         </View>
+
+        {/* Location Display */}
+        {location ? (
+          <View style={styles.locationSection}>
+            <Text style={styles.locationText}>
+              {address ? `Current Location: ${address}` : 'Fetching address...'}
+            </Text>
+            {/* <Text style={styles.locationText}>
+              Coordinates: {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
+            </Text> */}
+          </View>
+        ) : (
+          <View style={styles.locationSection}>
+            <Text style={styles.locationText}>
+              {locationError || 'Fetching location...'}
+            </Text>
+          </View>
+        )}
 
         {/* Hero Section */}
         <View style={styles.heroSection}>
@@ -92,6 +146,15 @@ const styles = StyleSheet.create({
   appName: {
     fontSize: 18,
     fontWeight: '700',
+    color: colors.text,
+  },
+  locationSection: {
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  locationText: {
+    fontSize: 14,
+    fontWeight: '600',
     color: colors.text,
   },
   heroSection: {
