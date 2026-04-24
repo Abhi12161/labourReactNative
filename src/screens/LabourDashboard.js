@@ -33,6 +33,7 @@ export function LabourDashboard({
   language,
   onChangeLanguage,
   onLogout,
+  onApplyToJob,
   postedJobs,
   session,
 }) {
@@ -41,6 +42,12 @@ export function LabourDashboard({
 
   // State for profile editing
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileData, setProfileData] = useState({
+    name: labourProfile.name,
+    title: labourProfile.title,
+    location: labourProfile.location,
+    phone: labourProfile.phone,
+  });
   const [editedProfile, setEditedProfile] = useState({
     name: labourProfile.name,
     title: labourProfile.title,
@@ -48,23 +55,31 @@ export function LabourDashboard({
     phone: labourProfile.phone,
   });
 
-  // State for notifications
+  // Local notifications are still dummy data for now and can later be replaced by API responses.
   const [notifications, setNotifications] = useState([]);
 
-  // State for applied jobs
+  // Track applied jobs locally so the button state updates immediately.
   const [appliedJobs, setAppliedJobs] = useState([]);
+
+  // This snapshot is the single place we build labour data for the job-application flow.
+  const labourApplicant = {
+    id: session.user.email,
+    name: profileData.name,
+    phone: profileData.phone,
+    title: profileData.title,
+    location: profileData.location,
+    rating: labourProfile.rating,
+    skills: labourProfile.skills,
+  };
 
   /**
    * Handle profile edit save
    */
-  const handleSaveProfile = async () => {
-    try {
-      await saveProfileUpdate(editedProfile, session.user.id);
-      Alert.alert(text.profileUpdatedTitle, text.profileUpdatedMessage);
-      setIsEditingProfile(false);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to update profile. Please try again.');
-    }
+  const handleSaveProfile = () => {
+    // Persist the edited values locally so the UI behaves like a completed save.
+    setProfileData(editedProfile);
+    Alert.alert(text.profileUpdatedTitle, text.profileUpdatedMessage);
+    setIsEditingProfile(false);
   };
 
   /**
@@ -72,10 +87,10 @@ export function LabourDashboard({
    */
   const handleCancelEdit = () => {
     setEditedProfile({
-      name: labourProfile.name,
-      title: labourProfile.title,
-      location: labourProfile.location,
-      phone: labourProfile.phone,
+      name: profileData.name,
+      title: profileData.title,
+      location: profileData.location,
+      phone: profileData.phone,
     });
     setIsEditingProfile(false);
   };
@@ -96,38 +111,41 @@ export function LabourDashboard({
         { text: text.cancel, style: 'cancel' },
         {
           text: text.apply,
-          onPress: async () => {
-            try {
-              setAppliedJobs(prev => [...prev, job.id]);
+          onPress: () => {
+            // Push the job application into shared app state so the customer can see it later.
+            const didApply = onApplyToJob({
+              job,
+              labour: labourApplicant,
+              customerEmail: job.customerEmail,
+            });
 
-              // Add notification
-              const notification = {
-                id: Date.now(),
-                type: 'application',
-                message: text.applicationSubmitted.replace('{job}', job.title),
-                timestamp: new Date().toISOString(),
-              };
-              setNotifications(prev => [notification, ...prev]);
-
-              // Save to admin database
-              await saveJobApplication(job, session.user);
-
-              Alert.alert(text.applicationSuccessTitle, text.applicationSuccessMessage);
-            } catch (error) {
-              // Remove from applied jobs if API call failed
-              setAppliedJobs(prev => prev.filter(id => id !== job.id));
-              Alert.alert('Error', 'Failed to submit application. Please try again.');
+            if (!didApply) {
+              Alert.alert(text.alreadyAppliedTitle, text.alreadyAppliedMessage);
+              return;
             }
-          }
-        }
-      ]
+
+            setAppliedJobs((prev) => [...prev, job.id]);
+
+            // Keep a short local notification so the labour also gets immediate feedback.
+            const notification = {
+              id: Date.now(),
+              type: 'application',
+              message: text.applicationSubmitted.replace('{job}', job.title),
+              timestamp: new Date().toISOString(),
+            };
+            setNotifications((prev) => [notification, ...prev]);
+
+            Alert.alert(text.applicationSuccessTitle, text.applicationSuccessMessage);
+          },
+        },
+      ],
     );
   };
 
   /**
    * Handle "Today Work" button press
    */
-  const handleTodayWork = async () => {
+  const handleTodayWork = () => {
     Alert.alert(
       text.todayWorkConfirmTitle,
       text.todayWorkConfirmMessage,
@@ -135,27 +153,19 @@ export function LabourDashboard({
         { text: text.cancel, style: 'cancel' },
         {
           text: text.confirm,
-          onPress: async () => {
-            try {
-              // Add notification
-              const notification = {
-                id: Date.now(),
-                type: 'today_work',
-                message: text.todayWorkNotification,
-                timestamp: new Date().toISOString(),
-              };
-              setNotifications(prev => [notification, ...prev]);
+          onPress: () => {
+            const notification = {
+              id: Date.now(),
+              type: 'today_work',
+              message: text.todayWorkNotification,
+              timestamp: new Date().toISOString(),
+            };
+            setNotifications((prev) => [notification, ...prev]);
 
-              // Save to admin database
-              await saveTodayWorkRequest(session.user);
-
-              Alert.alert(text.todayWorkSuccessTitle, text.todayWorkSuccessMessage);
-            } catch (error) {
-              Alert.alert('Error', 'Failed to submit today work request. Please try again.');
-            }
-          }
-        }
-      ]
+            Alert.alert(text.todayWorkSuccessTitle, text.todayWorkSuccessMessage);
+          },
+        },
+      ],
     );
   };
 
@@ -253,10 +263,10 @@ export function LabourDashboard({
               </>
             ) : (
               <>
-                <Text style={styles.profileName}>{labourProfile.name}</Text>
-                <Text style={styles.profileTitleText}>{labourProfile.title}</Text>
-                <Text style={styles.profileMeta}>{labourProfile.location}</Text>
-                <Text style={styles.profileMeta}>{labourProfile.phone}</Text>
+                <Text style={styles.profileName}>{profileData.name}</Text>
+                <Text style={styles.profileTitleText}>{profileData.title}</Text>
+                <Text style={styles.profileMeta}>{profileData.location}</Text>
+                <Text style={styles.profileMeta}>{profileData.phone}</Text>
                 <Text style={styles.profileMeta}>
                   {text.ratingLabel}: {labourProfile.rating} ({labourProfile.reviews})
                 </Text>
@@ -307,16 +317,22 @@ export function LabourDashboard({
       <View style={styles.panel}>
         <Text style={styles.panelTitle}>{text.availableJobsTitle}</Text>
         <View style={styles.jobsList}>
-          {postedJobs.map((job) => (
-            <JobCard
-              key={job.id}
-              copy={text}
-              job={job}
-              actionLabel={appliedJobs.includes(job.id) ? text.applied : text.applyNow}
-              onActionPress={() => handleApplyForJob(job)}
-              disabled={appliedJobs.includes(job.id)}
-            />
-          ))}
+          {postedJobs.length ? (
+            postedJobs.map((job) => (
+              <JobCard
+                key={job.id}
+                copy={text}
+                job={job}
+                actionLabel={appliedJobs.includes(job.id) ? text.applied : text.applyNow}
+                onActionPress={() => handleApplyForJob(job)}
+                disabled={appliedJobs.includes(job.id)}
+              />
+            ))
+          ) : (
+            <Text style={styles.preferenceItem}>
+              No posted jobs yet. Customer jobs will appear here after they create one.
+            </Text>
+          )}
         </View>
       </View>
 

@@ -1,7 +1,6 @@
 import * as Location from 'expo-location'; // Import Expo Location API
 import { useEffect, useState } from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { LanguageSwitcher } from '../components/LanguageSwitcher';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { copy } from '../constants/copy';
 import { colors, radius } from '../theme/tokens';
 
@@ -61,13 +60,13 @@ export function RoleSelectionScreen({ language, onChangeLanguage, onSelectRole }
   }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.logo}>💼</Text>
           <Text style={styles.appName}>{text.badge || 'Labor Connect'}</Text>
-          <LanguageSwitcher selected={language} onChange={onChangeLanguage} />
+          {/* <LanguageSwitcher selected={language} onChange={onChangeLanguage} /> */}
         </View>
 
         {/* Location Display */}
@@ -121,7 +120,7 @@ export function RoleSelectionScreen({ language, onChangeLanguage, onSelectRole }
           </Text>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

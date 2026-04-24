@@ -19,9 +19,12 @@ import { LabourDashboard } from './LabourDashboard';
 const DashboardScreen = ({
   session,
   postedJobs,
+  jobApplications,
   language,
   onPostJob,
+  onApplyToJob,
   onChangeLanguage,
+  onMarkApplicationsAsSeen,
   onLogout,
   navigation,
 }) => {
@@ -34,8 +37,10 @@ const DashboardScreen = ({
         // Render CustomerDashboard for customers
         <CustomerDashboard
           session={session}
+          jobApplications={jobApplications}
           postedJobs={postedJobs}
           language={language}
+          onMarkApplicationsAsSeen={onMarkApplicationsAsSeen}
           onPostJob={onPostJob}
           onChangeLanguage={onChangeLanguage}
           onLogout={onLogout}
@@ -45,8 +50,10 @@ const DashboardScreen = ({
         // Render LabourDashboard for labour workers
         <LabourDashboard
           session={session}
+          jobApplications={jobApplications}
           postedJobs={postedJobs}
           language={language}
+          onApplyToJob={onApplyToJob}
           onChangeLanguage={onChangeLanguage}
           onLogout={onLogout}
           navigation={navigation}

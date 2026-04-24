@@ -7,7 +7,7 @@ const languages = [
   { code: 'bho', label: 'भोजपुरी', icon: '🇮🇳' },
 ];
 
-export function LanguageSwitcher({ selected = 'en', onChange }) {
+export function LanguageSwitcher({ selected , onChange }) {
   return (
     <View style={styles.container}>
       <View style={styles.tabContainer}>
